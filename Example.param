@@ -1,0 +1,49 @@
+&TimingInformation
+  NumTrackingSnaps = 575 ,
+  SimulationLength = 345000.D0 ,
+  StartingTime = 600.D0 ,
+  MinimumTimeStep = 0.01D0 ,
+  LatticeSearchBins = 100 /
+&ParticleInput
+  ParticleInputMethod = 'ReadInitialConditions' , ! ReadInitialConditions, ReadFromFile, Source
+  ParticleInputCoordinates = 'Polar' , ! Polar, Cartesian
+  ParticleFile = 'particles.xyz' ,
+  ParticleFileFormat = 'ASCII' / ! ASCII, NETCDF
+!  ParticleSourceX = -90.0 ,
+!  ParticleSourceY = 25.0 ,
+!  ParticleSourceZ = 0.0 /
+&UnstructuredMesh
+  MeshFile = './fort.14' ,
+  MeshFileOrigin = 'ADCIRC' , ! ADCIRC, HYCOM
+  MeshCoordinates = 'Polar' / ! Polar, Cartesian
+&CurrentField
+  CurrentFile = './fort.45' ,
+  CurrentFileOrigin = 'ADCIRC' , ! ADCIRC, HYCOM
+  CurrentFileFormat = 'ASCII' , ! ASCII, NETCDF
+  CurrentDimensions = '3D' / ! 2D, 3D
+&WindField
+  WindFile = './fort.74' ,
+  WindFileFormat = 'ASCII' / ! ASCII, NETCDF
+&VelocityCombination
+  CombinationMethod = 'Original' ,
+  PercentageCurrent = 1.0 ,
+  PercentageWind = 0.01 ,
+  AngleWind = 7.0 /
+!&Diffusion
+!  DiffusionMethod = 'NULL' , ! NULL, PROCTOR1994
+!  Cx = 12.0 ,
+!  Cy = 12.0 ,
+!  Evx = 10.0 ,
+!  Evy = 10.0 /
+!&WaterProperties
+!  DensityWater = 998.2071D0 ,
+!  DynamicViscosityWater = 0.001002D0 /
+!&OilProperties
+!  DensityOil = 858.D0 ,
+!  DiameterEffective = 0.00005D0 ,
+!  InterfacialTension = 0.023D0 /
+!&OilPhysics
+!  BuoyancyMethod = "NULL" / ! NULL, CLIFT1978, ZHENG2000
+&OutputSettings
+  OutputFileName = 'output.pth.nc' ,
+  OutputFileFormat = 'NetCDF' /
