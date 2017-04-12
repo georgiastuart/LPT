@@ -15,19 +15,22 @@ clear all
 src_file = 'src.pth.nc';
 dst_file = 'dst.pth.nc';
 
+current_particle_color = 2.5; % Red
+previous_particle_color = 6.5; % White
+
 %
 % Number of particles.
 %
 n_tail = 15;
-n_tail = n_tail + 1;
+n_tail_1 = n_tail + 1;
 
 src_info = ncinfo(src_file);
 
-src_dim1 = src_info.Dimensions(1);
-src_dim2 = src_info.Dimensions(2);
-n_src_pts = src_dim2.Length;
+src_dim1 = src_info.Dimensions(1); % n_timesteps NetCDF Dim
+src_dim2 = src_info.Dimensions(2); % n_particles NetCDF Dim
+n_src_pts = src_dim2.Length;       % n_particles
 dst_dim2 = src_dim2;
-n_dst_pts = src_dim2.Length * n_tail;
+n_dst_pts = src_dim2.Length * n_tail_1;
 dst_dim2.Length = n_dst_pts;
 
 src_time = ncread(src_file,src_info.Variables(1).Name);
@@ -69,14 +72,60 @@ netcdf.putAtt(dst_id, dst_var5, '_FillValue', int32(0));
 netcdf.endDef(dst_id);
 netcdf.putVar(dst_id, dst_var1, src_time);
 %
-nc_temp = repmat(src_x, n_tail, 1);
+% Here, we first construct a matrix (nc_temp) with dimensions:
+%
+%    rows , cols = (n_src_pts x n_tail) , n_timesteps
+%                = n_dst_pts , n_timesteps
+% 
+% For 2 particles, 4 timesteps, and tail of length 2, this big
+% matrix has the form (first index is particle number, second 
+% index is timestep id):
+% 
+% x11 x12 x13 x14
+% x21 x22 x23 x24
+% x11 x12 x13 x14
+% x21 x22 x23 x24
+% x11 x12 x13 x14
+% x21 x22 x23 x24
+%
+% Then we change this matrix to the following form:
+% 
+% x11 x12 x11 x12
+% x21 x22 x21 x22
+% x11 x11 x12 x13
+% x21 x21 x22 x23
+% x11 x12 x13 x14
+% x21 x22 x23 x24
+%
+% Then we fill the 
+%
+nc_temp = repmat(src_x, n_tail_1, 1);
+%
+% In example i goes from 1 to 3 and n_tail_1 is 3.
+%
 for i = 1 : src_dim1.Length - 1
+    %
+    % In the example:
+    % (n_tail - 1) * n_src_pts + 1 : n_tail * n_src_pts = 5 : 6
+    %
     nc_temp_i = ...
-        nc_temp((n_tail - 1) * n_src_pts + 1 : n_tail * n_src_pts, i);
-    for j = i + 1 : min(src_dim1.Length, i + n_tail - 1)
+        nc_temp((n_tail_1 - 1) * n_src_pts + 1 : n_tail_1 * n_src_pts, i);
+    %
+    % In exmaple: j goes from i+1 to min(4, i+3-1) i.e.:
+    % i = 1 , j = 2 , 3
+    % i = 2 , j = 3 , 4
+    % i = 3 , j = 4
+    %
+    for j = i + 1 : min(src_dim1.Length, i + n_tail_1 - 1)
+        %
+        % In example j1 is:
+        % i = 1 , j1 = 2 , 3
+        % i = 2 , j1 = 2 , 3
+        % i = 3 , j1 = 2
+        %
         j1 = j - i + 1;
-        nc_temp((n_tail - j1) * n_src_pts + 1  : ...
-            (n_tail - j1 + 1) * n_src_pts, j) = ...
+        nc_temp((n_tail_1 - j1) * n_src_pts + 1  : ...
+            (n_tail_1 - j1 + 1) * n_src_pts, j) = ...
             nc_temp_i;            
     end
 end
@@ -89,34 +138,35 @@ netcdf.putVar(dst_id, dst_var2, nc_temp);
 %     netcdf.putVar(dst_id, dst_var2, [0,i-1], [n_dst_pts,1], nc_temp);
 % end
 %
-nc_temp = repmat(src_y, n_tail, 1);
+nc_temp = repmat(src_y, n_tail_1, 1);
 for i = 1 : src_dim1.Length - 1
     nc_temp_i = ...
-        nc_temp((n_tail - 1) * n_src_pts + 1 : n_tail * n_src_pts, i);
-    for j = i + 1 : min(src_dim1.Length, i + n_tail - 1)
+        nc_temp((n_tail_1 - 1) * n_src_pts + 1 : n_tail_1 * n_src_pts, i);
+    for j = i + 1 : min(src_dim1.Length, i + n_tail_1 - 1)
         j1 = j - i + 1;
-        nc_temp((n_tail - j1) * n_src_pts + 1  : ...
-            (n_tail - j1 + 1) * n_src_pts, j) = ...
+        nc_temp((n_tail_1 - j1) * n_src_pts + 1  : ...
+            (n_tail_1 - j1 + 1) * n_src_pts, j) = ...
             nc_temp_i;            
     end
 end
 netcdf.putVar(dst_id, dst_var3, nc_temp);
 %
-nc_temp = repmat(src_z, n_tail, 1);
+src_z = current_particle_color * ones(size(src_z));
+nc_temp = repmat(src_z, n_tail_1, 1);
 for i = 1 : src_dim1.Length - 1
-    nc_temp_i = ...
-        nc_temp((n_tail - 1) * n_src_pts + 1 : n_tail * n_src_pts, i);
-    for j = i + 1 : min(src_dim1.Length, i + n_tail - 1)
+    nc_temp_i = previous_particle_color * ones(n_src_pts,1);
+    for j = i + 1 : min(src_dim1.Length, i + n_tail_1 - 1)
         j1 = j - i + 1;
-        nc_temp((n_tail - j1) * n_src_pts + 1  : ...
-            (n_tail - j1 + 1) * n_src_pts, j) = ...
+        nc_temp((n_tail_1 - j1) * n_src_pts + 1  : ...
+            (n_tail_1 - j1 + 1) * n_src_pts, j) = ...
             nc_temp_i;            
     end
 end
 netcdf.putVar(dst_id, dst_var4, nc_temp);
 clear nc_temp;
 %
-dst_pper_time = n_tail * src_pper_time;
+dst_pper_time = n_tail_1 * src_pper_time;
 netcdf.putVar(dst_id, dst_var5, dst_pper_time);
 %
 netcdf.close(dst_id);
+
