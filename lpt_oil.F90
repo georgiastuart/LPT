@@ -118,7 +118,7 @@
             B2 = Y1 - A2*X1
 
             ! Compute the critical diameter.
-            DiameterCritical = 10.D0**((B2-B1)/(A1-A1))
+            DiameterCritical = 10.D0**((B2-B1)/(A1-A2))
 
             ! Ellipsoidal shape, intermediate size range.
             IF(DiameterEffective.LE.DiameterCritical)THEN
